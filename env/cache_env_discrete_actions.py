@@ -19,9 +19,9 @@ class cache_env(gym.Env):
         self.done = False
         self.MEM_SIZE = 6
         self.MAX_STEPS = 200000
-        self.MIN_COMMUN= 6
-        self.MID_COMMUN= 4.5
-        self.MAX_COMMUN= -3
+        self.MIN_COMMUN= 5
+        self.MID_COMMUN= 2
+        self.MAX_COMMUN= -1
         self.fresh_cost_weight= 1
         self.reward=0.0
         self.greedy_punishment = 0
@@ -101,18 +101,20 @@ class cache_env(gym.Env):
                     c12[j]= a12[j]/ b12[j]
                     # c12 = c12.reshape(6,1)
             self.mem_status[2*i+1, :] = c12
-            self.avg_fresh += sum(c12)/6
+            # self.avg_fresh += sum(c12)/6
         
       #  calculate the reward for each case       
         if self.which_BS == 0:
-            self.reward = e1 * self.MIN_COMMUN + p_has * self.MID_COMMUN
+            # self.reward = e1 * self.MIN_COMMUN + p_has * self.MID_COMMUN
             if e1==1:
+                self.reward = e1 * self.MIN_COMMUN
                 self.mem_status[0:2, :edge1_has[0][0]] = np.roll(self.mem_status[0:2, :edge1_has[0][0]], 1, axis=1)
                 self.freshness[0:2, :edge1_has[0][0]] = np.roll(self.freshness[0:2, :edge1_has[0][0]], 1, axis=1)
                 self.reward -= self.mem_status[1, edge1_has[0][0]] #substract freshness cost
                 if action!=0:
                     self.reward += self.greedy_punishment * (e1 + p_has)
             elif p_has == 1:
+                self.reward = p_has * self.MID_COMMUN
                 self.mem_status[4:, :parent_has[0][0]] = np.roll(self.mem_status[2*i: 2*i+1, :parent_has[0][0]], 1, axis=1)
                 self.freshness[4:, :parent_has[0][0]] = np.roll(self.freshness[4: 2*i+1, :parent_has[0][0]], 1, axis=1)
                 self.reward -= self.mem_status[5, parent_has[0][0]] #substract freshness cost
@@ -124,14 +126,16 @@ class cache_env(gym.Env):
             # self.reward -= self.avg_fresh
             
         elif self.which_BS ==1:
-            self.reward = e2 * self.MIN_COMMUN + p_has * self.MID_COMMUN
+            # self.reward = e2 * self.MIN_COMMUN + p_has * self.MID_COMMUN
             if e2==1:
+                self.reward = e2 * self.MIN_COMMUN
                 self.mem_status[2:4, :edge2_has[0][0]] = np.roll(self.mem_status[2:4, :edge2_has[0][0]], 1, axis=1)
                 self.freshness[2:4, :edge2_has[0][0]] = np.roll(self.freshness[2:4, :edge2_has[0][0]], 1, axis=1)
                 self.reward -= self.mem_status[3, edge2_has[0][0]] #substract freshness cost
                 if action!=0:
                     self.reward += self.greedy_punishment * (e2 + p_has)
             elif p_has == 1:
+                self.reward = p_has * self.MID_COMMUN
                 self.mem_status[4:, :parent_has[0][0]] = np.roll(self.mem_status[4: , :parent_has[0][0]], 1, axis=1)
                 self.freshness[4:, :parent_has[0][0]] = np.roll(self.freshness[4: , :parent_has[0][0]], 1, axis=1)
                 self.reward -= self.mem_status[5, parent_has[0][0]] #substract freshness cost
@@ -152,17 +156,17 @@ class cache_env(gym.Env):
 
         
         
-        
         """ Calling the required functions and returning the obs & reward"""
         self._take_action(action)
         
-        under_utilized = np.where(self.mem_status[self.mem_slots, :] == 0)
-        under_utilized = max(under_utilized[0].shape[0], under_utilized[1].shape[0])
-        under_utilized /= 4
-        # under_utilized = np.clip(under_utilized, 0, 3)
-        self.reward -= under_utilized
+        # under_utilized = np.where(self.mem_status[self.mem_slots, :] == 0)
+        # under_utilized = max(under_utilized[0].shape[0], under_utilized[1].shape[0])
+        # under_utilized /= 18
+        # # under_utilized = np.clip(under_utilized, 0, 3)
+        # self.reward -= under_utilized
         # self.reward = np.clip(self.reward, -21, 100)
-        
+        if action>0:
+            self.reward -= self.MAX_COMMUN
         
         obs= self._next_observation()
         self.current_step += 1

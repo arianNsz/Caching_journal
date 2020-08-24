@@ -13,8 +13,8 @@ from env.cache_env_discrete_actions import cache_env
 
 #%%
 import pandas as pd
-
-df = pd.read_csv('./data/challenging_popularity.csv')
+df = pd.read_csv('./data/may27.csv')
+# df = pd.read_csv('./data/challenging_popularity.csv')
 #%%
 
 #env = cache_env(df)
@@ -22,16 +22,16 @@ df = pd.read_csv('./data/challenging_popularity.csv')
 env = DummyVecEnv([lambda: cache_env(df)])
 
 #%%
-model = A2C('MlpPolicy', env, gamma= 0.99 , n_steps= 13, learning_rate=0.001, alpha=0.98, epsilon=2e-05, lr_schedule='linear')
+model = A2C('MlpLstmPolicy', env, gamma= 0.99 , n_steps= 14, learning_rate=0.003, alpha=0.99, epsilon=1e-05, lr_schedule='linear')
 #A2C('MlpPolicy', env, gamma= 0.9, n_steps= 18, learning_rate=0.00095)
 #A2C('MlpLstmPolicy', env, gamma= 0.9, n_steps= 18, learning_rate=0.01, alpha=0.9, epsilon=1e-05, lr_schedule='linear')
 #model.load('A2C_cache.zip')
 #model.load(
 # model.load('A2C_new_env')
 #%%
-model.learn(total_timesteps=120000)
+model.learn(total_timesteps= 60000)
 #%%
-model.save('final_version')
+model.save('A2C_cache_hit')
 #%%
 #model = A2C('MlpPolicy', env)
 #model.load('A2C_cache.zip')

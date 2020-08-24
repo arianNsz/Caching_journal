@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import gc
 
+# data = pd.read_csv('./data/may27.csv')
 data = pd.read_csv('./data/challenging_popularity.csv')
 
 """ take a look at the shape"""
@@ -19,7 +20,7 @@ mem_slots= [0, 3]
 gen_slots= [1, 4]
 life_slots=[2, 5]
 done = False
-MAX_STEPS = 500
+MAX_STEPS = 500    
 MIN_COMMUN= 5
 MID_COMMUN= 2
 MAX_COMMUN= -1
@@ -28,10 +29,14 @@ edge2 = np.array([6, 7, 8, 9, 10, 11])
 fresh_cost_weight= 1
 reward=0
 cache_count =0
+p_had=0
+e1_had=0
+e2_had=0
 lru_rank = np.array(range(18))
 rewards=[]
 utilization=[]
 avg_freshness=[]
+hits= []
 
 while current_step<= MAX_STEPS:
     request = data.loc[current_step : current_step+1].values
@@ -102,6 +107,7 @@ while current_step<= MAX_STEPS:
     # LRU table update:
         if i==0:
             if parent_has[0].shape != (0,):
+                p_had +=1
                 do_cache= False
                 # do the circular shift
                 position= [parent_has[0][0], parent_has[1][0]*3]
@@ -111,6 +117,7 @@ while current_step<= MAX_STEPS:
                 lru_rank[:rank] = np.roll(lru_rank[:rank], 1)
 
             if edge1_has[0].shape != (0,):
+                e1_had+=1
                 do_cache= False
                 position= [edge1_has[0][0], edge1_has[1][0]*3]
                 temp = 2*position[0] + int(position[1]/3)
@@ -132,9 +139,13 @@ while current_step<= MAX_STEPS:
                 rank = np.where(lru_rank == location)
                 rank = rank[0][0] + 1
                 lru_rank[:rank] = np.roll(lru_rank[:rank], 1)
+                hits.append(0)
+            else:
+                hits.append(1)
 
         if i==1:
             if parent_has[0].shape != (0,):
+                p_had+=1
                 do_cache= False
                 # do the circular shift
                 position= [parent_has[0][0], parent_has[1][0]*3]
@@ -144,6 +155,7 @@ while current_step<= MAX_STEPS:
                 lru_rank[:rank] = np.roll(lru_rank[:rank], 1)
 
             if edge2_has[0].shape != (0,):
+                e2_had +=1
                 do_cache= False
                 position= [edge2_has[0][0], edge2_has[1][0]*3]
                 temp = 2*position[0] + int(position[1]/3)
@@ -152,6 +164,7 @@ while current_step<= MAX_STEPS:
                 lru_rank[:rank] = np.roll(lru_rank[:rank], 1)
         
             if do_cache:
+                hits.append(0)
                 cache_count += 1
                 temp = lru_rank
                 for num in edge1:
@@ -165,8 +178,10 @@ while current_step<= MAX_STEPS:
                 rank = np.where(lru_rank==location)
                 rank= rank[0][0] + 1
                 lru_rank[:rank] = np.roll(lru_rank[:rank], 1)
+            else:
+                hits.append(1)
     
-    rewards.append(reward)
+        rewards.append(reward)
     print(f'loc: {location}')
     print(f'rank: {lru_rank}')
     print(f'Step: {current_step}')
@@ -175,18 +190,22 @@ while current_step<= MAX_STEPS:
     print(f'Reward: {reward}')
     current_step += 1
 #%%
-import matplotlib.pyplot as plt
-plt.title('accumulated rewards LRU')
-plt.plot(rewards)
-plt.show()
+# import matplotlib.pyplot as plt
+# plt.title('accumulated rewards LRU')
+# plt.plot(rewards)
+# plt.show()
 
-plt.title('average freshness in each step')
-avg_freshness = np.array(avg_freshness)
-avg_freshness /= 3
-plt.plot(avg_freshness)
-plt.show()
-plt.title('average utilization in each step (higher is better)')
-utilization = np.array(utilization)
-print(f'Avg Utilization: {np.mean(utilization)}')
-plt.plot(utilization)
-plt.show()
+# plt.title('average freshness in each step')
+# avg_freshness = np.array(avg_freshness)
+# avg_freshness /= 3
+# plt.plot(avg_freshness)
+# plt.show()
+# plt.title('average utilization in each step (higher is better)')
+# utilization = np.array(utilization)
+# print(f'Avg Utilization: {np.mean(utilization)}')
+# plt.plot(utilization)
+# plt.show()
+    
+import pickle
+with open('LRU.pkl', 'wb') as f:  # Python 3: open(..., 'wb')
+    pickle.dump([sum(hits), utilization, avg_freshness, rewards], f)
